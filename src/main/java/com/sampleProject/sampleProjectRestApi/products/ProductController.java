@@ -26,6 +26,11 @@ public class ProductController {
     public List<Product> getProductsByCategoryName(@PathVariable String categoryName){
         return productRepository.findByCategoryName(categoryName);
     }
+    @GetMapping(path = "/testapi", produces = "application/json")
+    public String testapi(){
+        return "This is a test for rest Api";
+//        return productRepository.findByCategoryName(categoryName);
+    }
     @GetMapping(path = "/testSpringSecurity", produces = "application/json")
     public List<Product> showProduct(){
         return productServices.showAllProducts();

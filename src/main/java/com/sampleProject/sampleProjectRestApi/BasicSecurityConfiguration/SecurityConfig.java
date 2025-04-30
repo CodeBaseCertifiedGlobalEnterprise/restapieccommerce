@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/getproducts", "/getproducts/category/**", "/getcategory","/latest").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/getproducts", "/getproducts/category/**", "/getcategory","/latest","/testapi").permitAll()
                         .requestMatchers("/api/product/**").authenticated()
                         .requestMatchers("/h2-console/**", "/auth/login", "/auth/register").permitAll()
                 )
