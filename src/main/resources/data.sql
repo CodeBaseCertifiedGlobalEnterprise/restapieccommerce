@@ -41,8 +41,8 @@ INSERT INTO product (name, category_id, price, description, product_image_url, c
 VALUES ('Amazon Echo Show 8', 6, 129.99, 'Smart display with Alexa', 'http://localhost:8080/images/echoshow8.jpg', '2025-03-16 10:00:00');
 
 
-INSERT INTO store_users (user_name, email, password, role, date)
-VALUES ('wisdommaliki', 'wisdommaliki@gmail.com', '$2a$10$lxn1nfV5E52cC1xeotA6/u.cHAGQM6kFthGNXT8pTFsYjWaFU3voS', 'USER', NOW());
+--INSERT INTO store_users (user_name, email, password, role, date)
+--VALUES ('wisdommaliki', 'wisdommaliki@gmail.com', '$2a$10$lxn1nfV5E52cC1xeotA6/u.cHAGQM6kFthGNXT8pTFsYjWaFU3voS', 'USER', NOW());
 
 --$2a$10$VrZ2Ez6GZMEgN3lmZbUv9eGIXcfJqQDFTHY/vRJvd12mYc6XKJ/Ci
 

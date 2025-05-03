@@ -62,6 +62,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Registration registerUser) {
+
         // Basic null or empty checks
         if (registerUser.getUserName() == null || registerUser.getUserName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Username is required");
@@ -101,6 +102,7 @@ public class AuthController {
         newUser.setCreatedAt(new Date());
         System.out.println("Getting Role of registered person");
         System.out.println(newUser.getRole());
+        System.out.println("Good Lets set a user");
 
         userRepository.save(newUser);
         Key key = new SecretKeySpec(jwtConfig.getSecret().getBytes(), SignatureAlgorithm.HS256.getJcaName());
