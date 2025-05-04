@@ -4,7 +4,7 @@ package com.sampleProject.sampleProjectRestApi.user;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -19,7 +19,7 @@ public class User {
    private  String password;
 
     private String email;
-   private Date date;
+   private LocalDate date;
     @Column(name = "role")
    private String role;
 
@@ -35,7 +35,7 @@ public class User {
         this.userName = userName;
         this.password = password;
     }
-    public User(String userName, String password,String email,String role,Date date,List<Order> orders){
+    public User(String userName, String password,String email,String role,LocalDate date,List<Order> orders){
         this.userName = userName;
         this.password = password;
         this.email=email;
@@ -76,7 +76,7 @@ public class User {
        this.email = email;
     }
 
-    public void setCreatedAt(Date date) {
+    public void setCreatedAt(LocalDate date) {
        this.date = date;
     }
 

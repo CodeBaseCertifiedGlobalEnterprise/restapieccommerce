@@ -99,7 +99,7 @@ public class AuthController {
         newUser.setEmail(registerUser.getEmailAddress());
         newUser.setPassword(passwordEncoder.encode(registerUser.getPassword()));
         newUser.setRole("USER");
-        newUser.setCreatedAt(new Date());
+        newUser.setCreatedAt(registerUser.getCreatedAt());
         System.out.println("Getting Role of registered person");
         System.out.println(newUser.getRole());
         System.out.println("Good Lets set a user");

@@ -1,20 +1,21 @@
 package com.sampleProject.sampleProjectRestApi.Registeration;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDate;
+
 
 public class Registration {
     private String emailAddress;
     private String userName;
     private String password;
     private String confirmPassword;
-    private Date createdAt;
-
-    public Registration(String emailAddress, String userName, String password, String confirmPassword, Date createdAt) {
+    private final LocalDate createdAt;
+    public Registration(String emailAddress, String userName, String password, String confirmPassword) {
         this.emailAddress = emailAddress;
         this.userName = userName;
         this.password = password;
         this.confirmPassword = confirmPassword;
-        this.createdAt = createdAt;
+        this.createdAt = LocalDate.now();
     }
 
     public String getEmailAddress() {
@@ -49,10 +50,5 @@ public class Registration {
         this.confirmPassword = confirmPassword;
     }
 
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
+    public LocalDate getCreatedAt() { return createdAt; }
 }
