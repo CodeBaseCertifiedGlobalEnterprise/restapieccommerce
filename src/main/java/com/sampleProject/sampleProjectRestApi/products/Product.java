@@ -23,6 +23,9 @@ public class Product {
     private Category category;
 
     @Column(nullable = false)
+    private String make;
+
+    @Column(nullable = false)
     private BigDecimal price;
 
     @Column(length = 500)
@@ -42,8 +45,9 @@ public class Product {
         this.createdAt = LocalDateTime.now(); // FIXED: Initialize inside constructor
     }
 
-    public Product(String name, Category category, BigDecimal price, String description, String productImageUrl,int totalItemSold) {
+    public Product(String name, String make, Category category, BigDecimal price, String description, String productImageUrl,int totalItemSold) {
         this.name = name;
+        this.make = make;
         this.category = category;
         this.price = price;
         this.description = description;
@@ -64,6 +68,13 @@ public class Product {
     }
 
     public void setId(Long id) { this.id = id; }
+
+    public void setMake(String make){
+        this.make= make;
+    }
+    public String getMake(){
+        return  make;
+    }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
