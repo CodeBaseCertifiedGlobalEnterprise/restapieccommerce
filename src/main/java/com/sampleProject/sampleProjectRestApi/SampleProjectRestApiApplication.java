@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SampleProjectRestApiApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(SampleProjectRestApiApplication.class, args);
-		System.out.println("This is the begining of the project");
+		System.out.println("This is the beginning of the project");
 	}
 }
 
