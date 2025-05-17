@@ -172,19 +172,26 @@ public class AuthController {
 
     }
 
-    @PostMapping("/refresh-token")
-    public ResponseEntity<?> refreshToken(@CookieValue(value = "refresh_token", required = false) String refreshToken) {
-        if (refreshToken == null) {
+        @PostMapping("/refresh-token")
+//        in talend api tester, make sure you do this..
+//        Content-Type: application/json (optional, if you're sending/expecting JSON)
+//        Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        public ResponseEntity<?> refreshToken(@CookieValue(value = "refresh_token", required = false) String refreshToken) {
+            if (refreshToken == null) {
+            System.out.println("token is null");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token missing");
         }
 
         Optional<RefreshToken> savedTokenOpt = refreshTokenRepository.findByToken(refreshToken);
         if (savedTokenOpt.isEmpty()) {
+            System.out.println("Token is empty");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token not found or revoked");
         }
 
         RefreshToken savedToken = savedTokenOpt.get();
+        System.out.println("saved token "+savedToken);
         if (savedToken.getExpiryDate().before(new Date())) {
+            System.out.println("Token date is expired..");
             refreshTokenRepository.delete(savedToken); // cleanup expired token
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token expired");
         }
@@ -228,7 +235,15 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@CookieValue("refresh_token") String refreshToken) {
         refreshTokenRepository.findByToken(refreshToken).ifPresent(refreshTokenRepository::delete);
-        return ResponseEntity.ok("Logged out");
+        ResponseCookie clearCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true).secure(true)
+                .sameSite("Strict").path("/")
+                .maxAge(0)           // delete it
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
+                .body("Logged out");
     }
 
 

@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/getproducts", "/getproducts/category/**", "/getcategory","/latest","/testapi").permitAll()
+                        .requestMatchers(HttpMethod.POST,"auth/refresh-token","/auth/logout").permitAll()
                         .requestMatchers("/api/product/**").authenticated()
                         .requestMatchers("/h2-console/**", "/auth/login", "/auth/register").permitAll()
                 )
