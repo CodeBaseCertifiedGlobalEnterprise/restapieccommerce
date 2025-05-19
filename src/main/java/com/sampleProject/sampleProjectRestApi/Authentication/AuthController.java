@@ -84,7 +84,7 @@ public class AuthController {
                 .secure(true) // true in production (HTTPS)
                 .path("/api/refresh-token")
                 .maxAge(7 * 24 * 60 * 60)
-                .sameSite("Strict")
+                .sameSite("LAX")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         Map<String, Object> responseBody = new HashMap<>();
@@ -122,29 +122,29 @@ public class AuthController {
         if (optionalUser.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Username already exists");
         }
-        Optional<User> existingEmail= userRepository.findByEmail(registerUser.getEmailAddress());
-        if(existingEmail.isPresent()){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email Address already exists Please Log in ");
+
+        Optional<User> existingEmail = userRepository.findByEmail(registerUser.getEmailAddress());
+        if (existingEmail.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email Address already exists. Please log in.");
         }
 
-        // Create the new user object
+        // Create new user
         User newUser = new User();
         newUser.setUserName(registerUser.getUserName());
         newUser.setEmail(registerUser.getEmailAddress());
         newUser.setPassword(passwordEncoder.encode(registerUser.getPassword()));
         newUser.setRole("USER");
         newUser.setCreatedAt(registerUser.getCreatedAt());
-        System.out.println("Getting Role of registered person");
-        System.out.println(newUser.getRole());
-        System.out.println("Good Lets set a user");
 
         userRepository.save(newUser);
+
+        // Create Access and Refresh Tokens
         Key key = new SecretKeySpec(jwtConfig.getSecret().getBytes(), SignatureAlgorithm.HS256.getJcaName());
 
         String token = Jwts.builder()
                 .setSubject(newUser.getUserName())
                 .claim("userId", newUser.getId())
-                .claim("role",newUser.getRole())
+                .claim("role", newUser.getRole())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getExpiration()))
                 .signWith(key)
@@ -155,28 +155,41 @@ public class AuthController {
                 .setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getRefreshExpiration()))
                 .signWith(key)
                 .compact();
-        // You can store refresh token in DB here (optional)
+
         // Save refresh token in DB
         RefreshToken refreshTokenEntity = new RefreshToken();
-        refreshTokenEntity.setToken(refreshToken); // the string you generated
+        refreshTokenEntity.setToken(refreshToken);
         refreshTokenEntity.setUser(newUser);
-        refreshTokenEntity.setExpiryDate(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
+        refreshTokenEntity.setExpiryDate(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000)); // 7 days
         refreshTokenRepository.save(refreshTokenEntity);
 
+        // Prepare response body
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
-        response.put("refreshToken", refreshToken);
-        response.put("user",new UserDTO(newUser.getId(),newUser.getUserName(),newUser.getEmail(),newUser.getRole()));
+        response.put("user", new UserDTO(newUser.getId(), newUser.getUserName(), newUser.getEmail(), newUser.getRole()));
 
-        return ResponseEntity.ok(response);
+        // Set HttpOnly cookie for refresh token
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(false) // true if using HTTPS
+                .path("/") // Important: make the cookie available on all routes
+                .maxAge(7 * 24 * 60 * 60) // 7 days
+                .sameSite("Lax") // or "Strict" depending on use case
+                .build();
 
+        // Return with cookie
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response);
     }
 
-        @PostMapping("/refresh-token")
-//        in talend api tester, make sure you do this..
+
+    @PostMapping("/refresh-token")
+//        in talend api tester, make sure you do this.
 //        Content-Type: application/json (optional, if you're sending/expecting JSON)
 //        Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         public ResponseEntity<?> refreshToken(@CookieValue(value = "refresh_token", required = false) String refreshToken) {
+        System.out.println("Refresh token from cookie: " + refreshToken);
             if (refreshToken == null) {
             System.out.println("token is null");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token missing");
@@ -237,7 +250,7 @@ public class AuthController {
         refreshTokenRepository.findByToken(refreshToken).ifPresent(refreshTokenRepository::delete);
         ResponseCookie clearCookie = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true).secure(true)
-                .sameSite("Strict").path("/")
+                .sameSite("LAX").path("/")
                 .maxAge(0)           // delete it
                 .build();
 
