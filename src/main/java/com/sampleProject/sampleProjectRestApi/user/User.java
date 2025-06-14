@@ -1,6 +1,7 @@
 package com.sampleProject.sampleProjectRestApi.user;
 
 
+import com.sampleProject.sampleProjectRestApi.Order.Order;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
