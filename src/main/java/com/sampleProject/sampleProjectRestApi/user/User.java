@@ -1,6 +1,7 @@
 package com.sampleProject.sampleProjectRestApi.user;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sampleProject.sampleProjectRestApi.Order.Order;
 import jakarta.persistence.*;
 
@@ -17,7 +18,8 @@ public class User {
 
     @Column(unique = true)
    private String userName;
-   private  String password;
+    @JsonIgnore
+    private String password;
 
     private String email;
    private LocalDate date;

@@ -1,5 +1,7 @@
 package com.sampleProject.sampleProjectRestApi.Authentication;
 
+import com.sampleProject.sampleProjectRestApi.Authentication.blacklistedToken.BlackListedRepository;
+import com.sampleProject.sampleProjectRestApi.Authentication.blacklistedToken.BlacklistedToken;
 import com.sampleProject.sampleProjectRestApi.Registeration.Registration;
 import com.sampleProject.sampleProjectRestApi.login.LoginRequest;
 import com.sampleProject.sampleProjectRestApi.user.User;
@@ -9,6 +11,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,12 +33,14 @@ public class AuthController {
     private final JwtConfig jwtConfig;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final BlackListedRepository blacklistedTokenRepository;
 
-    public AuthController(UserRepository userRepository, JwtConfig jwtConfig, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository) {
+    public AuthController(UserRepository userRepository, JwtConfig jwtConfig, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository, BlackListedRepository blacklistedTokenRepository) {
         this.userRepository = userRepository;
         this.jwtConfig = jwtConfig;
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
     }
 
 
@@ -188,9 +194,9 @@ public class AuthController {
 //        in talend api tester, make sure you do this.
 //        Content-Type: application/json (optional, if you're sending/expecting JSON)
 //        Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        public ResponseEntity<?> refreshToken(@CookieValue(value = "refresh_token", required = false) String refreshToken) {
+    public ResponseEntity<?> refreshToken(@CookieValue(value = "refresh_token", required = false) String refreshToken) {
         System.out.println("Refresh token from cookie: " + refreshToken);
-            if (refreshToken == null) {
+        if (refreshToken == null) {
             System.out.println("token is null");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token missing");
         }
@@ -202,7 +208,7 @@ public class AuthController {
         }
 
         RefreshToken savedToken = savedTokenOpt.get();
-        System.out.println("saved token "+savedToken);
+        System.out.println("saved token " + savedToken);
         if (savedToken.getExpiryDate().before(new Date())) {
             System.out.println("Token date is expired..");
             refreshTokenRepository.delete(savedToken); // cleanup expired token
@@ -246,19 +252,48 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@CookieValue("refresh_token") String refreshToken) {
-        refreshTokenRepository.findByToken(refreshToken).ifPresent(refreshTokenRepository::delete);
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+
+        String authHeader = request.getHeader("Authorization");
+        String refreshToken = null;
+
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refresh_token".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        System.out.println("=== Logout endpoint hit ===");
+        System.out.println("Auth header: " + authHeader);
+        System.out.println("Refresh token: " + refreshToken);
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String accessToken = authHeader.substring(7);
+            BlacklistedToken tokenEntity = new BlacklistedToken();
+            tokenEntity.setToken(accessToken);
+            blacklistedTokenRepository.save(tokenEntity);
+        }
+
+        if (refreshToken != null) {
+            refreshTokenRepository.findByToken(refreshToken)
+                    .ifPresent(refreshTokenRepository::delete);
+        }
+
         ResponseCookie clearCookie = ResponseCookie.from("refresh_token", "")
-                .httpOnly(true).secure(true)
-                .sameSite("LAX").path("/")
-                .maxAge(0)           // delete it
+                .httpOnly(true)
+                .secure(false) // Use true only in HTTPS
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
                 .build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
-                .body("Logged out");
+                .body("Logged out successfully");
     }
-
 
 
 }

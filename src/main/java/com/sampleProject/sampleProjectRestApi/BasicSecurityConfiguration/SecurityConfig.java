@@ -1,5 +1,8 @@
 package com.sampleProject.sampleProjectRestApi.BasicSecurityConfiguration;
+
 import com.sampleProject.sampleProjectRestApi.Authentication.JwtAuthenticationFilter;
+import com.sampleProject.sampleProjectRestApi.Authentication.blacklistedToken.BlackListedRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,28 +23,35 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${jwt.secret}") // Make sure to set this in application.properties or application.yml
+    @Value("${jwt.secret}")
     private String jwtSecret;
+
+    private final BlackListedRepository blackListedRepository;
+
+    public SecurityConfig(BlackListedRepository blackListedRepository) {
+        this.blackListedRepository = blackListedRepository;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Create an instance of JwtAuthenticationFilter
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(
-                request -> request.getRequestURI().startsWith("/api/product"), // Or `request -> true` for all routes
-                jwtSecret
-        );
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtSecret, blackListedRepository);
 
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/getproducts", "/getproducts/category/**", "/getcategory","/latest","/testapi").permitAll()
-                        .requestMatchers(HttpMethod.POST,"auth/refresh-token","/auth/logout").permitAll()
-                        .requestMatchers("/api/product/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/getproducts", "/getproducts/category/**", "/getcategory", "/latest", "/testapi").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/refresh-token", "/auth/logout").permitAll()
                         .requestMatchers("/h2-console/**", "/auth/login", "/auth/register").permitAll()
+                        .requestMatchers("/api/orders/**").authenticated()
                 )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); // Register the filter
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        })
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -58,9 +68,9 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }
