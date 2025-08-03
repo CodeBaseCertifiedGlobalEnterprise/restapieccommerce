@@ -19,9 +19,9 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<?> placeOrder(@RequestBody PlaceOrderRequest request, Principal principal) {
+
         System.out.println(request);
         System.out.println("This got printed out!!!!!!!!");
-
         if (principal == null) {
             return ResponseEntity.status(401).body("Unauthorized: Missing or invalid token");
         }
